@@ -16,12 +16,8 @@ __debug_bin*
 *.out
 
 # Binaries
-cmd/shortener/main
-cmd/shortener/shortener
 
 # Local storage file
-cmd/shortener/file_storage.NDJSON
-cmd/shortener/*_test.txt
 
 # Dependency directories (remove the comment below to include it)
 vendor/
