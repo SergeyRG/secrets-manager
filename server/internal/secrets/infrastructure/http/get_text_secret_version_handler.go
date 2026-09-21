@@ -31,18 +31,6 @@ func (h *GetTextSecretVersionHandler) Handle(rw http.ResponseWriter, req *http.R
 		return
 	}
 
-	// if !strings.Contains(req.Header.Get("content-type"), "application/json") {
-	// 	rw.WriteHeader(http.StatusBadRequest)
-	// 	return
-	// }
-
-	// reqData := GetTextSecretVersionReq{}
-
-	// err := json.NewDecoder(io.LimitReader(req.Body, 1024*1024)).Decode(&reqData)
-	// if err != nil {
-	// 	http.Error(rw, "ошибка парсинга тела запроса", http.StatusBadRequest)
-	// 	return
-	// }
 	secretName := req.Header.Get("X-Secret-Name")
 	versionStr := req.Header.Get("X-Secret-Version")
 

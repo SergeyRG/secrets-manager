@@ -18,8 +18,3 @@ type SecretDataRepository interface {
 	AddSecretData(ctx context.Context, smt secretsDomain.SecretsMetadata, data io.ReadCloser) error
 	GetSecretData(ctx context.Context, smt secretsDomain.SecretsMetadata) (io.ReadCloser, error)
 }
-
-// type SecretBlobRepository interface {
-// 	AddSecretData(ctx context.Context, smt secretsDomain.SecretsMetadata, data io.ReadCloser) error
-// 	GetSecretData(ctx context.Context, smt secretsDomain.SecretsMetadata) (io.ReadCloser, error)
-// }
