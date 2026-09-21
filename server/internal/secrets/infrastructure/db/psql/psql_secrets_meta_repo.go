@@ -3,12 +3,20 @@ package psql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"iter"
 
 	"github.com/SergeyRG/secrets-manager/internal/shared/domain"
 	secretsDomain "github.com/SergeyRG/secrets-manager/server/internal/secrets/domain"
 	basePSQLInfra "github.com/SergeyRG/secrets-manager/server/internal/shared/infrastructure/psql"
+	"github.com/jackc/pgx/v5/pgconn"
+)
+
+const errPSQLCodeUniqueViolation = "23505"
+
+var (
+	ErrSecretsMetadataConflict = errors.New("Секрет с данным именем и версией уже существует")
 )
 
 type SecretsMetadataRepo struct {
@@ -41,7 +49,14 @@ func (repo *SecretsMetadataRepo) AddSecretMetadata(ctx context.Context, sm secre
 	)
 
 	if err != nil {
-		return fmt.Errorf("ошибка сохранения данных в БД: %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == errPSQLCodeUniqueViolation && pgErr.ConstraintName == "uq_user_secret_name" {
+				return ErrSecretsMetadataConflict
+			}
+		}
+
+		return fmt.Errorf("непредвиденная ошибка выполнения запроса: %w", err)
 	}
 
 	return nil
@@ -59,7 +74,7 @@ func (repo *SecretsMetadataRepo) GetUserSecretMetadataByName(
 		result *sql.Row
 	)
 	if version == 0 {
-		query = `SELECT
+		query = `SELECT FOR UPDATE
  				user_id, secret_id, secret_name, secret_type, time_creation, version, version_id
  			  FROM
  				secrets_metadata
@@ -69,7 +84,7 @@ func (repo *SecretsMetadataRepo) GetUserSecretMetadataByName(
  			  LIMIT 1;`
 		result = qe.QueryRowContext(ctx, query, string(uID), sName)
 	} else {
-		query = `SELECT
+		query = `SELECT FOR UPDATE
  				user_id, secret_id, secret_name, secret_type, time_creation, version, version_id
  			  FROM
  				secrets_metadata

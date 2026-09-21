@@ -33,7 +33,11 @@ import (
 )
 
 func main() {
-	config := config.InitConfig()
+	config, err := config.InitConfig()
+	if err != nil {
+		fmt.Printf("ошибка конфигурации приложения: %v\n", err)
+		os.Exit(1)
+	}
 
 	logging.Initialize(config.LoggingLevel)
 	l := logging.Logger
@@ -60,11 +64,6 @@ func main() {
 	loginUC := authUsecases.NewLoginUseCase(rac)
 
 	ts := tokenstorage.NewJWTTokenStorage(make([]byte, 0))
-	// err := loginUC.Execute(context.Background(), ts)
-	// if err != nil {
-	// 	consolePromter.Send("Ошибка аутентификации\n")
-	// 	os.Exit(1)
-	// }
 
 	keyRepo := securityRestyInfra.NewRestyEncryptedKeyRepo(restyClient, config.SecurityKeyRelaitiveURL)
 	getKeyUC := securityUsecases.NewGetUserKeyUseCase(keyRepo)
@@ -78,14 +77,9 @@ func main() {
 	pp := securityCliInfra.NewCliPasswordProvider(consolePromter)
 
 	createKeyUC := securityUsecases.NewCreateKeyUseCase(keyRepo)
-	// err := getKeyUC.Execute(context.Background(), ks, pp)
-	// if err != nil {
-	// 	consolePromter.Send("ошибка загрузки мастер ключа\n")
-	// 	os.Exit(1)
-	// }
 
 	LoginOrch := orch.NewLoginOrchestrator(loginUC, createKeyUC, getKeyUC)
-	err := LoginOrch.Execute(context.Background(), ts, ks, pp)
+	err = LoginOrch.Execute(context.Background(), ts, ks, pp)
 	if err != nil {
 		consolePromter.Send(fmt.Sprintf("ошибка входа в приложение: %v\n", err))
 		os.Exit(1)
@@ -140,6 +134,7 @@ func main() {
 	}
 
 	// команда create //
+
 	createCommandInfo := sharedCli.CommandInfo{
 		Name:        "create",
 		Description: `создать новый секрет. Использование: create <ИМЯ СЕКРЕТА>`,

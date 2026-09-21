@@ -28,7 +28,7 @@ func (h *GetUserEncryptedKeyHandler) Handle(rw http.ResponseWriter, req *http.Re
 		uID,
 	)
 	if err != nil {
-		if errors.Is(usecases.ErrEncryptionKeyDoesntExists, err) {
+		if errors.Is(err, usecases.ErrEncryptionKeyDoesntExists) {
 			http.Error(rw, "ключ пользователя не задан", http.StatusNotFound)
 			return
 		}

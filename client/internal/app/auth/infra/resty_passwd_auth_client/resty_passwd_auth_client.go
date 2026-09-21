@@ -29,6 +29,10 @@ func (a *RestyPasswdAuthClient) Authenticate(ctx context.Context, storage usecas
 
 	creds, err := a.provider.GetCreds(ctx)
 
+	if err != nil {
+		return fmt.Errorf("ошибка получения данных для аутентификации: %w", err)
+	}
+
 	body := restyAuthReqDTO{
 		Login:    creds.Login,
 		Password: creds.Passwd,

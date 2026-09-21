@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/SergeyRG/secrets-manager/internal/shared/domain"
@@ -41,7 +42,7 @@ func (uc *GetSecretVersionUseCase) Execute(
 	receiver, ok := uc.receivers[sm.SecretType]
 	if !ok {
 		l.Logger.Error("неизвестный тип секрета", zap.String("secret type", sm.SecretType.ToString()))
-		return nil, err
+		return nil, fmt.Errorf("неизвестный тип секрета", sm.SecretType)
 	}
 	data, err := receiver.ReceiveSecretData(ctx, sm)
 	if err != nil {

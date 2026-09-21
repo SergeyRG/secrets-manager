@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/SergeyRG/secrets-manager/internal/shared/domain"
@@ -35,7 +36,7 @@ func (uc *AddSecretVersionUseCase) Execute(
 	var sm secretsDomain.SecretsMetadata
 
 	err := uc.txm.WithinTransaction(ctx, func(txCtx context.Context) error {
-		curSm, err := uc.repo.GetUserSecretMetadataByName(ctx, uID, sName, 0)
+		curSm, err := uc.repo.GetUserSecretMetadataByName(txCtx, uID, sName, 0)
 		if err != nil {
 			l.Logger.Error("ошибка получения метаданных секрета из БД", zap.Error(err))
 			return err
@@ -55,9 +56,9 @@ func (uc *AddSecretVersionUseCase) Execute(
 		saver, ok := uc.savers[newSm.SecretType]
 		if !ok {
 			l.Logger.Error("неизвестный тип секрета", zap.String("secret type", sm.SecretType.ToString()))
-			return err
+			return fmt.Errorf("неизвестный тип секрета: %v", newSm.SecretType)
 		}
-		err = saver.SaveSecretData(ctx, newSm, src)
+		err = saver.SaveSecretData(txCtx, newSm, src)
 		if err != nil {
 			l.Logger.Error("ошибка сохранения данных", zap.Error(err))
 			return err

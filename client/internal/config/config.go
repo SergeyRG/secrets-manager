@@ -1,6 +1,12 @@
 package config
 
-import "flag"
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"os"
+	"path/filepath"
+)
 
 type Config struct {
 	ServerBaseUrl           string
@@ -30,10 +36,41 @@ func newConfig() Config {
 	}
 }
 
-func InitConfig() Config {
-	r := flag.Bool("r", false, "Запустить в режиме регистрации")
-	flag.Parse()
+func InitConfig() (Config, error) {
 	cfg := newConfig()
+
+	r := flag.Bool("r", false, "Запустить в режиме регистрации")
+	d := flag.String("d", "", "путь к директории сохранения бинарных файлов")
+
+	flag.Parse()
+
+	if *d == "" {
+		execPath, err := os.Executable()
+		if err != nil {
+			fmt.Printf("Ошибка получения пути к исполняемому файлу: %v\n", err)
+			return Config{}, err
+		}
+		fmt.Println("Путь к файлу:", execPath)
+		cfg.BinarySecretsLoadDir = filepath.Dir(execPath)
+	} else {
+		if !dirExists(*d) {
+			return Config{}, fmt.Errorf("ошибка проверки доступа к директории %v", *d)
+		}
+		cfg.BinarySecretsLoadDir = *d
+	}
 	cfg.RegistreMode = *r
-	return cfg
+	return cfg, nil
+}
+
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	if err == nil {
+		return info.IsDir()
+	}
+
+	if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return false
 }
