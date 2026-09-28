@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-func DecryptKeyWithPassword(encryptedBlock []byte, password string) ([]byte, error) {
+func DecryptDataWithPassword(encryptedBlock []byte, password string) ([]byte, error) {
 	const saltSize = 16
 	const nonceSize = 12
 

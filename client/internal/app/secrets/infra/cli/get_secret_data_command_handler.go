@@ -10,12 +10,6 @@ import (
 	sharedCli "github.com/SergeyRG/secrets-manager/client/internal/app/shared/infra/cli"
 )
 
-// type textDataResp struct {
-// 	SecretName string `json:"secret_name"`
-// 	Version    string `json:"version"`
-// 	Data       string `json:"data"`
-// }
-
 type GetSecretDataCommandHandler struct {
 	orch  *orch.GetSecretDataByNameOrch
 	views map[domain.SecretType]View

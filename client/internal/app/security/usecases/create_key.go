@@ -3,25 +3,39 @@ package usecases
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/SergeyRG/secrets-manager/client/internal/app/security/domain"
+	sharedUsecases "github.com/SergeyRG/secrets-manager/client/internal/app/shared/usecases"
 )
 
-var ErrKeyNotExist = errors.New("ключ пользователя не создан")
+var (
+	ErrKeyNotExist         = errors.New("ключ пользователя не создан")
+	ErrKeyDontSavedInCache = errors.New("ошибка сохранения ключа в локальном кэше")
+)
 
 type CreateKeyUseCase struct {
-	keyRepo domain.EncryptedKeyRepository
+	RemoteKeyRepo domain.EncryptedKeyRepository
+	LocalKeyRepo  domain.EncryptedKeyRepository
+	st            sharedUsecases.SessionType
 }
 
 func NewCreateKeyUseCase(
-	keyRepo domain.EncryptedKeyRepository,
+	RemoteKeyRepo domain.EncryptedKeyRepository,
+	LocalKeyRepo domain.EncryptedKeyRepository,
+	st sharedUsecases.SessionType,
 ) *CreateKeyUseCase {
 	return &CreateKeyUseCase{
-		keyRepo: keyRepo,
+		RemoteKeyRepo: RemoteKeyRepo,
+		LocalKeyRepo:  LocalKeyRepo,
+		st:            st,
 	}
 }
 
 func (uc *CreateKeyUseCase) Execute(ctx context.Context, pp PasswdProvider, storage *domain.KeyStorage) error {
+	if uc.st == sharedUsecases.SessionTypeLocal {
+		return errors.New("создание ключа в локальной сессии недопустимо")
+	}
 	err := storage.GenerateNewKey()
 	if err != nil {
 		return err
@@ -36,5 +50,13 @@ func (uc *CreateKeyUseCase) Execute(ctx context.Context, pp PasswdProvider, stor
 	if err != nil {
 		return err
 	}
-	return uc.keyRepo.SaveEncryptedKey(ctx, ek)
+	err = uc.RemoteKeyRepo.SaveEncryptedKey(ctx, ek)
+	if err != nil {
+		return err
+	}
+	err = uc.LocalKeyRepo.SaveEncryptedKey(ctx, ek)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrKeyDontSavedInCache, err)
+	}
+	return nil
 }

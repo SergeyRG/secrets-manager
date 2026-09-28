@@ -13,7 +13,7 @@ var (
 
 const KEY_SIZE int = 32
 
-type KeyEncryptor func(mainKey []byte, password string) ([]byte, error)
+type KeyEncryptor func(data []byte, password string) ([]byte, error)
 type KeyDecryptor func(encryptedBlock []byte, password string) ([]byte, error)
 
 type StreamEncryptor func(key []byte, plain io.ReadCloser) (io.ReadCloser, error)

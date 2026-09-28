@@ -23,11 +23,6 @@ func NewRestyEncryptedKeyRepo(
 		SecurityRelativeUrl: SecurityRelativeUrl}
 }
 
-type EncryptedKeyRepository interface {
-	SaveEncryptedKey(ctx context.Context, encKey []byte) error
-	GetEncryptedKey(ctx context.Context) (encKey []byte, err error)
-}
-
 func (uc *RestyEncryptedKeyRepo) SaveEncryptedKey(ctx context.Context, encKey []byte) error {
 	encodedKey := base64.StdEncoding.EncodeToString(encKey)
 	resp, err := uc.restiClient.R().

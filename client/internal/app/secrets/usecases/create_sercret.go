@@ -2,17 +2,23 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	secretsDomain "github.com/SergeyRG/secrets-manager/client/internal/app/secrets/domain"
+	sharedUsecases "github.com/SergeyRG/secrets-manager/client/internal/app/shared/usecases"
 )
 
 type CreateSecretUseCase struct {
 	repo SecretDataRepository
+	st   sharedUsecases.SessionType
 }
 
-func NewCreateSecretUseCase(repo SecretDataRepository) *CreateSecretUseCase {
-	return &CreateSecretUseCase{repo: repo}
+func NewCreateSecretUseCase(
+	repo SecretDataRepository,
+	st sharedUsecases.SessionType,
+) *CreateSecretUseCase {
+	return &CreateSecretUseCase{repo: repo, st: st}
 }
 
 func (uc *CreateSecretUseCase) Execute(
@@ -21,6 +27,9 @@ func (uc *CreateSecretUseCase) Execute(
 	secretType secretsDomain.SecretType,
 	data io.ReadCloser,
 ) error {
+	if uc.st == sharedUsecases.SessionTypeLocal {
+		return errors.New("нельзя создавать новые секреты в локальной сессии")
+	}
 	smd := secretsDomain.SecretsMetadata{
 		SecretName: sName,
 		SecretType: secretType,

@@ -10,5 +10,5 @@ type TokenStorage interface {
 }
 
 type AuthClient interface {
-	Authenticate(ctx context.Context, storage TokenStorage) error
+	Authenticate(ctx context.Context, storage TokenStorage) (login string, err error)
 }

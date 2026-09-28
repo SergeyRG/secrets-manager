@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-func EncryptKeyWithPassword(mainKey []byte, password string) ([]byte, error) {
+func EncryptDataWithPassword(data []byte, password string) ([]byte, error) {
 	salt := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, salt); err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func EncryptKeyWithPassword(mainKey []byte, password string) ([]byte, error) {
 		return nil, err
 	}
 
-	encryptedKey := aesGCM.Seal(nil, nonce, mainKey, nil)
+	encryptedKey := aesGCM.Seal(nil, nonce, data, nil)
 
 	result := append(salt, nonce...)
 	result = append(result, encryptedKey...)

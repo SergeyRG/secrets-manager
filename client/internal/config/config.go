@@ -1,7 +1,8 @@
 package config
 
 import (
-	"errors"
+	"github.com/SergeyRG/secrets-manager/internal/shared/infrastructure/utils"
+
 	"flag"
 	"fmt"
 	"os"
@@ -13,9 +14,12 @@ type Config struct {
 	LoggingLevel            string
 	PerPage                 int
 	BinarySecretsLoadDir    string
+	LocalCacheDir           string
+	CacheIDSalt             []byte
 	TextDataRelativeURL     string
 	BlobDataRelativeURL     string
 	MetadataRelativeURL     string
+	MetadataListRelativeURL string
 	SecurityKeyRelaitiveURL string
 	RegistreRelativeURL     string
 	RegistreMode            bool
@@ -26,10 +30,11 @@ func newConfig() Config {
 		ServerBaseUrl:           "http://localhost:8080",
 		LoggingLevel:            "debug",
 		PerPage:                 10,
-		BinarySecretsLoadDir:    "D:\\Games",
+		BinarySecretsLoadDir:    "",
 		TextDataRelativeURL:     "api/secrets/text",
 		BlobDataRelativeURL:     "api/secrets/binary",
 		MetadataRelativeURL:     "api/secrets/metadata",
+		MetadataListRelativeURL: "api/secrets/list",
 		SecurityKeyRelaitiveURL: "api/security/key",
 		RegistreRelativeURL:     "api/user/register",
 		RegistreMode:            false,
@@ -44,33 +49,28 @@ func InitConfig() (Config, error) {
 
 	flag.Parse()
 
+	execPath, err := os.Executable()
+	execDir := filepath.Dir(execPath)
+	if err != nil {
+		fmt.Printf("Ошибка получения пути к исполняемому файлу: %v\n", err)
+		return Config{}, err
+	}
+	cfg.LocalCacheDir = filepath.Join(execDir, "cache")
+
 	if *d == "" {
-		execPath, err := os.Executable()
-		if err != nil {
-			fmt.Printf("Ошибка получения пути к исполняемому файлу: %v\n", err)
-			return Config{}, err
-		}
-		fmt.Println("Путь к файлу:", execPath)
 		cfg.BinarySecretsLoadDir = filepath.Dir(execPath)
 	} else {
-		if !dirExists(*d) {
+		if !utils.DirExists(*d) {
 			return Config{}, fmt.Errorf("ошибка проверки доступа к директории %v", *d)
 		}
 		cfg.BinarySecretsLoadDir = *d
 	}
 	cfg.RegistreMode = *r
+	cfg.CacheIDSalt = []byte{
+		0x0a, 0x7f, 0x3d, 0x81, 0xb9, 0xc2, 0x4e, 0x5a,
+		0x6f, 0x8b, 0x90, 0x1c, 0x2d, 0x3e, 0x4f, 0x5a,
+		0x6b, 0x7c, 0x8d, 0x9e, 0x0f, 0x1a, 0x2b, 0x3c,
+		0x4d, 0x5e, 0x6f, 0x7a, 0x8b, 0x9c, 0x0d, 0x1e,
+	}
 	return cfg, nil
-}
-
-func dirExists(path string) bool {
-	info, err := os.Stat(path)
-	if err == nil {
-		return info.IsDir()
-	}
-
-	if errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-
-	return false
 }

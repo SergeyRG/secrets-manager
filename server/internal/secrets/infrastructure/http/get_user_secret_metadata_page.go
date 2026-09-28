@@ -11,6 +11,7 @@ import (
 
 type getUserSecretMetadataPageResp struct {
 	SecretName string `json:"secret_name"`
+	SecretType string `json:"secret_type"`
 	Version    int64  `json:"version"`
 	Error      string `json:"error"`
 }
@@ -72,6 +73,7 @@ func (h *GetUserSecretMetadataPageHandler) Handle(rw http.ResponseWriter, req *h
 		}
 		resp := getUserSecretMetadataPageResp{
 			SecretName: sm.SecretName,
+			SecretType: sm.SecretType.ToString(),
 			Version:    sm.Version,
 			Error:      "",
 		}

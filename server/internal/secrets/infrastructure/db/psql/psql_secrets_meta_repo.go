@@ -74,22 +74,24 @@ func (repo *SecretsMetadataRepo) GetUserSecretMetadataByName(
 		result *sql.Row
 	)
 	if version == 0 {
-		query = `SELECT FOR UPDATE
+		query = `SELECT
  				user_id, secret_id, secret_name, secret_type, time_creation, version, version_id
  			  FROM
  				secrets_metadata
  			  WHERE
 			  	user_id = $1 and secret_name = $2 
 			  ORDER BY version DESC
- 			  LIMIT 1;`
+ 			  LIMIT 1
+			  FOR UPDATE;`
 		result = qe.QueryRowContext(ctx, query, string(uID), sName)
 	} else {
-		query = `SELECT FOR UPDATE
+		query = `SELECT
  				user_id, secret_id, secret_name, secret_type, time_creation, version, version_id
  			  FROM
  				secrets_metadata
  			  WHERE
-			  	user_id = $1 and secret_name = $2 and version = $3`
+			  	user_id = $1 and secret_name = $2 and version = $3
+			  FOR UPDATE;`
 		result = qe.QueryRowContext(ctx, query, string(uID), sName, version)
 	}
 	sm := secretsDomain.SecretsMetadata{}
