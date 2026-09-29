@@ -207,7 +207,7 @@ func main() {
 	}
 
 	getters := make(map[secretsDomain.SecretType]SecretsCliInfra.SecretDataGetter)
-	getters[secretsDomain.SecretTypeBinary] = &SecretsCliInfra.BlobSecretGetter{}
+	getters[secretsDomain.SecretTypeBinary] = &SecretsCliInfra.BlobSecretGetter{MaxSizeBytes: config.MaxSizeBytes}
 	getters[secretsDomain.SecretTypeFreeText] = &SecretsCliInfra.FreeTextSecretGetter{}
 	getters[secretsDomain.SecretTypeAuthData] = &SecretsCliInfra.AuthDataSecretGetter{}
 	getters[secretsDomain.SecretTypeBankCard] = &SecretsCliInfra.BankDataSecretGetter{}

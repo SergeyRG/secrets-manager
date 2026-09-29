@@ -23,6 +23,7 @@ type Config struct {
 	SecurityKeyRelaitiveURL string
 	RegistreRelativeURL     string
 	RegistreMode            bool
+	MaxSizeBytes            int64
 }
 
 func newConfig() Config {
@@ -38,6 +39,7 @@ func newConfig() Config {
 		SecurityKeyRelaitiveURL: "api/security/key",
 		RegistreRelativeURL:     "api/user/register",
 		RegistreMode:            false,
+		MaxSizeBytes:            1024 * 1024 * 100, //100mb
 	}
 }
 

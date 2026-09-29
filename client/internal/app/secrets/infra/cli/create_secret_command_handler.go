@@ -56,6 +56,9 @@ func (h *CreateSecretCommandHandler) Handle(ctx context.Context, args []string, 
 	}
 
 	data, err := h.getters[secretType].GetDataFromUser(prompter)
+	if err != nil {
+		return err
+	}
 
 	err = h.createSecretOrch.Execute(ctx, secretName, secretType, data)
 	if err != nil {

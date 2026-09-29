@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 
@@ -95,6 +96,7 @@ func (v *AuthDataSecretGetter) GetDataFromUser(
 }
 
 type BlobSecretGetter struct {
+	MaxSizeBytes int64
 }
 
 func (v *BlobSecretGetter) GetDataFromUser(
@@ -106,6 +108,14 @@ func (v *BlobSecretGetter) GetDataFromUser(
 	path, err := promter.Receive(false)
 	if err != nil {
 		return nil, errors.New("ошибка ввода данных")
+	}
+
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения информации о файле: %w", err)
+	}
+	if fileInfo.Size() > v.MaxSizeBytes {
+		return nil, fmt.Errorf("размер файла превышает допустимый лимит (%d байт)", v.MaxSizeBytes)
 	}
 
 	file, err := os.OpenFile(path, os.O_RDONLY, 0644)
