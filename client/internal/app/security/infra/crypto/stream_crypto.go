@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	ErrVerificationFailed = errors.New("crypto: ошибка верификации (данные испорчеы или неверный ключ)")
+	ErrVerificationFailed = errors.New("crypto: ошибка верификации (данные испорчены или неверный ключ)")
 	ErrInvalidKeySize     = errors.New("crypto: неправильная длина ключа (должен быть 16, 24, или 32 байта)")
 )
 
