@@ -30,7 +30,6 @@ func TestCreateKeyUseCase_Execute(t *testing.T) {
 			name:        "Ошибка: создание ключа в локальной сессии запрещено",
 			sessionType: sharedUsecases.SessionTypeLocal,
 			mockBehavior: func(remote *domainMocks.MockEncryptedKeyRepository, local *domainMocks.MockEncryptedKeyRepository, pp *mocks.MockPasswdProvider) {
-				// Метод прерывается до вызова зависимостей
 			},
 			wantErr: errors.New("создание ключа в локальной сессии недопустимо"),
 		},
@@ -75,24 +74,21 @@ func TestCreateKeyUseCase_Execute(t *testing.T) {
 
 			tt.mockBehavior(mockRemote, mockLocal, mockPP)
 
-			// Инициализируем KeyStorage с фейковой функцией шифрования ключа
 			ks := domain.NewKeyStorage(
-				nil, // KeyDecryptor
+				nil,
 				func(data []byte, password string) ([]byte, error) {
 					if password != testPassword {
 						t.Errorf("в KeyEncryptor передан неверный пароль: %s", password)
 					}
 					return testEncryptedKey, nil
 				},
-				nil, // StreamEncryptor
-				nil, // StreamDecryptor
-			)
+				nil,
+				nil)
 
 			uc := usecases.NewCreateKeyUseCase(mockRemote, mockLocal, tt.sessionType)
 
 			err := uc.Execute(ctx, mockPP, ks)
 
-			// Валидация ошибок
 			if tt.wantErr != nil {
 				if err == nil {
 					t.Fatalf("ожидалась ошибка %v, но получен nil", tt.wantErr)

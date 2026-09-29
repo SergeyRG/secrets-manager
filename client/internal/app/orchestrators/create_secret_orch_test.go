@@ -22,7 +22,7 @@ func TestCreateSecretOrch_Execute(t *testing.T) {
 	tests := []struct {
 		name          string
 		sessionType   sharedUsecases.SessionType
-		encryptStream securityDomain.StreamEncryptor // Ваш тип из домена security
+		encryptStream securityDomain.StreamEncryptor
 		mockRepo      func(m *mocks.MockSecretDataRepository)
 		inputData     string
 		wantEncData   string
@@ -37,12 +37,10 @@ func TestCreateSecretOrch_Execute(t *testing.T) {
 				if err != nil {
 					return nil, err
 				}
-				// Имитируем шифрование, переводя строку в верхний регистр
 				upperData := strings.ToUpper(string(data))
 				return io.NopCloser(bytes.NewBufferString(upperData)), nil
 			},
 			mockRepo: func(m *mocks.MockSecretDataRepository) {
-				// Ожидаем, что в репозиторий придет измененный (как бы зашифрованный) поток
 				m.EXPECT().
 					AddSecretData(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(ctx context.Context, smd secretsDomain.SecretsMetadata, data io.ReadCloser) error {
@@ -51,7 +49,6 @@ func TestCreateSecretOrch_Execute(t *testing.T) {
 						if err != nil {
 							return err
 						}
-						// Проверяем, что оркестратор передал данные через наш StreamEncryptor
 						if string(res) != "MY_RAW_SECRET_DATA" {
 							t.Errorf("ожидались зашифрованные данные 'MY_RAW_SECRET_DATA', получено: %q", string(res))
 						}
@@ -69,7 +66,6 @@ func TestCreateSecretOrch_Execute(t *testing.T) {
 				return nil, errors.New("crypto failure")
 			},
 			mockRepo: func(m *mocks.MockSecretDataRepository) {
-				// До репозитория выполнение дойти не должно
 			},
 			inputData: "my_raw_secret_data",
 			wantErr:   errors.New("crypto failure"),
@@ -96,14 +92,11 @@ func TestCreateSecretOrch_Execute(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			// 1. Инициализируем изолированный мок репозитория для Use Case
 			mockRepo := mocks.NewMockSecretDataRepository(ctrl)
 			tt.mockRepo(mockRepo)
 
-			// 2. Создаем реальный Use Case, внедряя мок репозитория
 			uc := secretsUsecases.NewCreateSecretUseCase(mockRepo, tt.sessionType)
 
-			// 3. Создаем доменный KeyStorage с тестируемой функцией шифрования потока
 			ks := securityDomain.NewKeyStorage(
 				nil,              // KeyDecryptor
 				nil,              // KeyEncryptor
@@ -111,21 +104,16 @@ func TestCreateSecretOrch_Execute(t *testing.T) {
 				nil,              // StreamDecryptor
 			)
 
-			// Инициализируем внутреннее поле key случайными байтами, чтобы обойти ErrKeyEmpty
 			if err := ks.GenerateNewKey(); err != nil {
 				t.Fatalf("не удалось сгенерировать случайный ключ для KeyStorage: %v", err)
 			}
 
-			// 4. Передаем зависимости в оркестратор
 			orch := orchestrator.NewCreateSecretOrch(uc, ks)
 
-			// Подготавливаем входящий поток данных
 			stream := io.NopCloser(bytes.NewBufferString(tt.inputData))
 
-			// Выполняем оркестратор
 			err := orch.Execute(context.Background(), "test_secret", secretsDomain.SecretTypeBinary, stream)
 
-			// 5. Проверяем ошибки
 			if tt.wantErr != nil {
 				if err == nil {
 					t.Fatalf("ожидалась ошибка %v, но получен nil", tt.wantErr)

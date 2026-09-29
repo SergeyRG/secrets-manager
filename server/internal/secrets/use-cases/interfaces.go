@@ -1,3 +1,4 @@
+//go:generate mockgen -destination=mocks/mocks.go -package=mocks github.com/SergeyRG/secrets-manager/server/internal/secrets/use-cases SecretMetadataRepository,SecretTextDataRepository,SecretBlobRepository,SecretDataSaver,SecretDataReceiver
 package usecases
 
 import (

@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"github.com/SergeyRG/secrets-manager/internal/shared/domain"
@@ -42,7 +43,7 @@ func (uc *CreateNewSecretUseCase) Execute(
 		saver, ok := uc.savers[secretType]
 		if !ok {
 			l.Logger.Error("неизвестный тип секрета", zap.String("secret type", secretType.ToString()))
-			return err
+			return errors.New("неизвестный тип секрета")
 		}
 
 		err = saver.SaveSecretData(txCtx, sm, src)

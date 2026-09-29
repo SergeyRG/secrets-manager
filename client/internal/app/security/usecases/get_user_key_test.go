@@ -105,13 +105,11 @@ func TestGetUserKeyUseCase_Execute(t *testing.T) {
 
 			tt.mockBehavior(mockRemote, mockLocal, mockPP)
 
-			// Инициализируем KeyStorage с лямбдой для расшифрования
 			ks := domain.NewKeyStorage(
 				func(encryptedBlock []byte, password string) ([]byte, error) {
 					if password != testPassword {
 						t.Errorf("в KeyDecryptor передан неверный пароль: %s", password)
 					}
-					// Просто возвращаем дефолтные байты ключа, симулируя расшифрование
 					return []byte("decrypted_master_key"), nil
 				},
 				nil, nil, nil,
@@ -121,7 +119,6 @@ func TestGetUserKeyUseCase_Execute(t *testing.T) {
 
 			err := uc.Execute(ctx, ks, mockPP)
 
-			// Валидация ошибок с разбором обертывания через %w
 			if tt.wantErr != nil {
 				if err == nil {
 					t.Fatalf("ожидалась ошибка %v, но получен nil", tt.wantErr)

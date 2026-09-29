@@ -42,7 +42,7 @@ func (uc *GetSecretVersionUseCase) Execute(
 	receiver, ok := uc.receivers[sm.SecretType]
 	if !ok {
 		l.Logger.Error("неизвестный тип секрета", zap.String("secret type", sm.SecretType.ToString()))
-		return nil, fmt.Errorf("неизвестный тип секрета", sm.SecretType)
+		return nil, fmt.Errorf("неизвестный тип секрета: %v", sm.SecretType)
 	}
 	data, err := receiver.ReceiveSecretData(ctx, sm)
 	if err != nil {

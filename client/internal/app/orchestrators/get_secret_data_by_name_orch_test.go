@@ -22,7 +22,7 @@ func TestGetSecretDataByNameOrch_Execute(t *testing.T) {
 	tests := []struct {
 		name          string
 		sessionType   sharedUsecases.SessionType
-		inputName     string // Динамическое имя секрета для каждого тест-кейса
+		inputName     string
 		inputVersion  int
 		decryptStream securityDomain.StreamDecryptor
 		mockMetadata  func(m *mocks.MockSecretMetadataRepository)
@@ -79,7 +79,7 @@ func TestGetSecretDataByNameOrch_Execute(t *testing.T) {
 				m.EXPECT().
 					GetUserSecretMetadataByName(gomock.Any(), "missing_secret", 0).
 					Return(secretsDomain.SecretsMetadata{}, errors.New("not found")).
-					AnyTimes() // Устойчиво к повторным вызовам внутри цепочки выполнения
+					AnyTimes()
 			},
 			mockData: func(m *mocks.MockSecretDataRepository) {
 

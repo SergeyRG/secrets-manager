@@ -50,22 +50,25 @@ func EncryptStream(key []byte, plainStream io.ReadCloser) (io.ReadCloser, error)
 
 		buffer := make([]byte, chunkSize)
 		var chunkIndex uint64 = 0
+		var sentLastChunk bool
 
 		for {
 			n, readErr := io.ReadFull(plainStream, buffer)
-			isLast := readErr != nil
+
+			isLast := errors.Is(readErr, io.EOF) || errors.Is(readErr, io.ErrUnexpectedEOF)
+
 			if n > 0 {
 				chunkNonce := deriveNonce(mainNonce, chunkIndex)
 
 				var ad []byte
 				if isLast {
 					ad = []byte{1}
+					sentLastChunk = true
 				} else {
 					ad = []byte{0}
 				}
 
 				encryptedData := aesGCM.Seal(nil, chunkNonce, buffer[:n], ad)
-
 				if _, writeErr := pw.Write(encryptedData); writeErr != nil {
 					return
 				}
@@ -74,6 +77,11 @@ func EncryptStream(key []byte, plainStream io.ReadCloser) (io.ReadCloser, error)
 
 			if readErr != nil {
 				if errors.Is(readErr, io.EOF) || errors.Is(readErr, io.ErrUnexpectedEOF) {
+					if !sentLastChunk {
+						chunkNonce := deriveNonce(mainNonce, chunkIndex)
+						encryptedData := aesGCM.Seal(nil, chunkNonce, nil, []byte{1})
+						_, _ = pw.Write(encryptedData)
+					}
 					return
 				}
 				_ = pw.CloseWithError(readErr)
@@ -114,36 +122,32 @@ func DecryptStream(key []byte, encryptedStream io.ReadCloser) (io.ReadCloser, er
 
 		for {
 			n, readErr := io.ReadFull(encryptedStream, buffer)
+
+			isEOF := errors.Is(readErr, io.EOF) || errors.Is(readErr, io.ErrUnexpectedEOF)
+
 			if n > 0 {
 				chunkNonce := deriveNonce(mainNonce, chunkIndex)
 
-				isLast := readErr != nil
-
-				var ad []byte
-				if isLast {
-					ad = []byte{1}
-				} else {
-					ad = []byte{0}
-				}
-
-				decryptedData, err := aesGCM.Open(nil, chunkNonce, buffer[:n], ad)
+				decryptedData, err := aesGCM.Open(nil, chunkNonce, buffer[:n], []byte{0})
 				if err != nil {
-					_ = pw.CloseWithError(ErrVerificationFailed)
-					return
-				}
-
-				if isLast {
+					decryptedData, err = aesGCM.Open(nil, chunkNonce, buffer[:n], []byte{1})
+					if err != nil {
+						_ = pw.CloseWithError(ErrVerificationFailed)
+						return
+					}
 					lastChunkVerified = true
 				}
 
-				if _, writeErr := pw.Write(decryptedData); writeErr != nil {
-					return
+				if len(decryptedData) > 0 {
+					if _, writeErr := pw.Write(decryptedData); writeErr != nil {
+						return
+					}
 				}
 				chunkIndex++
 			}
 
 			if readErr != nil {
-				if errors.Is(readErr, io.EOF) || errors.Is(readErr, io.ErrUnexpectedEOF) {
+				if isEOF {
 					if !lastChunkVerified {
 						_ = pw.CloseWithError(ErrVerificationFailed)
 						return
