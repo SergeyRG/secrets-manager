@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
 )
 
 func TestAddSecretVersionUseCase_Execute(t *testing.T) {
@@ -74,7 +75,7 @@ func TestAddSecretVersionUseCase_Execute(t *testing.T) {
 
 			tt.mockSetup(mockRepo, mockSaver)
 
-			uc := usecases.NewAddSecretVersionUseCase(mockRepo, savers, mockTxm)
+			uc := usecases.NewAddSecretVersionUseCase(mockRepo, savers, mockTxm, zap.NewNop())
 			newSm, err := uc.Execute(ctx, uID, "my-secret", dummyReader)
 
 			if tt.expectError {

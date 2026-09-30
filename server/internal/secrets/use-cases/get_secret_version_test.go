@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/SergeyRG/secrets-manager/internal/shared/domain"
-	l "github.com/SergeyRG/secrets-manager/internal/shared/infrastructure/logging"
 	secretsDomain "github.com/SergeyRG/secrets-manager/server/internal/secrets/domain"
 	usecases "github.com/SergeyRG/secrets-manager/server/internal/secrets/use-cases"
 	"github.com/SergeyRG/secrets-manager/server/internal/secrets/use-cases/mocks"
@@ -19,10 +18,6 @@ import (
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
-
-func init() {
-	l.Logger = zap.NewNop()
-}
 
 func TestGetSecretVersionUseCase_Execute(t *testing.T) {
 	ctx := context.Background()
@@ -88,7 +83,7 @@ func TestGetSecretVersionUseCase_Execute(t *testing.T) {
 
 			tt.mockSetup(mockRepo, mockReceiver)
 
-			uc := usecases.NewGetSecretVersionUseCase(mockRepo, receivers, mockTxm)
+			uc := usecases.NewGetSecretVersionUseCase(mockRepo, receivers, mockTxm, zap.NewNop())
 			data, err := uc.Execute(ctx, uID, "my_secret", tt.version)
 
 			if tt.expectedError != nil {

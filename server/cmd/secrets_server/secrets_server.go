@@ -40,12 +40,12 @@ func main() {
 	}
 
 	//Инициализация логера
-	err = logging.Initialize(cfg.LoggingLevel)
+	baseLogger, err := logging.Initialize(cfg.LoggingLevel)
 	if err != nil {
 		log.Fatal("ошибка инициализации системы логирования", zap.Error(err))
 		return
 	}
-	l := logging.Logger
+	l := baseLogger.Named("main")
 
 	//Подключение к БД и проверка соединения
 	db, err := sharedPsql.CreateAndCheckPSQLCon(cfg.DBDSN)
@@ -65,7 +65,7 @@ func main() {
 	txm := sharedPsql.NewTxManager(db)
 
 	//Инициализация остальных объектов приложения и настройка роутера
-	r, err := InitApp(cfg, txm)
+	r, err := InitApp(cfg, txm, baseLogger)
 	if err != nil {
 		l.Fatal("ошибка инициализации приложения", zap.Error(err))
 		return
@@ -77,7 +77,7 @@ func main() {
 	}
 }
 
-func InitApp(cfg config.Config, txm *sharedPsql.PSQLTxManager) (*chi.Mux, error) {
+func InitApp(cfg config.Config, txm *sharedPsql.PSQLTxManager, bl *zap.Logger) (*chi.Mux, error) {
 	r := chi.NewRouter()
 	jwtm := crypto.NewJWTManager([]byte(cfg.SecretKey))
 
@@ -112,14 +112,14 @@ func InitApp(cfg config.Config, txm *sharedPsql.PSQLTxManager) (*chi.Mux, error)
 	savers[secretsDomain.SecretTypeAuthData] = textSecretSaver
 	savers[secretsDomain.SecretTypeBinary] = blobSecretSaver
 
-	createNewSecretUC := secretsUseCases.NewCreateNewSecretUseCase(secretsMetaRepo, savers, txm)
+	createNewSecretUC := secretsUseCases.NewCreateNewSecretUseCase(secretsMetaRepo, savers, txm, bl.Named("create_secret"))
 
 	CreateNewBinarySecretOrch := app.NewCreateNewSecretOrch(uploadFileUsecase, getFileUseCase, createNewSecretUC)
 
 	CreateNewBinarySecretHandler := secretsHandlers.NewCreateNewBinarySecretHandler(CreateNewBinarySecretOrch)
 	r.With(authMiddleware).Post("/api/secrets/binary", CreateNewBinarySecretHandler.Handle)
 
-	createNewSecretVersionUC := secretsUseCases.NewAddSecretVersionUseCase(secretsMetaRepo, savers, txm)
+	createNewSecretVersionUC := secretsUseCases.NewAddSecretVersionUseCase(secretsMetaRepo, savers, txm, bl.Named("create_secret_version"))
 	createNewBinarySecretVersionOrch := app.NewCreateNewBinarySecretVersionOrch(uploadFileUsecase, getFileUseCase, createNewSecretVersionUC)
 	createNewBinarySecretVersionHandler := secretsHandlers.NewCreateNewBinarySecretVersionHandler(createNewBinarySecretVersionOrch)
 	r.With(authMiddleware).Patch("/api/secrets/binary", createNewBinarySecretVersionHandler.Handle)
@@ -139,7 +139,7 @@ func InitApp(cfg config.Config, txm *sharedPsql.PSQLTxManager) (*chi.Mux, error)
 	receivers[secretsDomain.SecretTypeBankCard] = textSecretReceiver
 	receivers[secretsDomain.SecretTypeBinary] = blobSecretReceiver
 
-	getSecretVersionUC := secretsUseCases.NewGetSecretVersionUseCase(secretsMetaRepo, receivers, txm)
+	getSecretVersionUC := secretsUseCases.NewGetSecretVersionUseCase(secretsMetaRepo, receivers, txm, bl.Named("get_secret"))
 	getTextSecretVersionHandler := secretsHandlers.NewGetTextSecretVersionHandler(getSecretVersionUC)
 	r.With(authMiddleware).Get("/api/secrets/text", getTextSecretVersionHandler.Handle)
 

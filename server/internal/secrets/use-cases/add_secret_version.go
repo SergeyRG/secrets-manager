@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/SergeyRG/secrets-manager/internal/shared/domain"
-	l "github.com/SergeyRG/secrets-manager/internal/shared/infrastructure/logging"
 	secretsDomain "github.com/SergeyRG/secrets-manager/server/internal/secrets/domain"
 	sharedUseCases "github.com/SergeyRG/secrets-manager/server/internal/shared/use-cases"
 	"go.uber.org/zap"
@@ -16,14 +15,16 @@ type AddSecretVersionUseCase struct {
 	repo   SecretMetadataRepository
 	savers map[secretsDomain.SecretType]SecretDataSaver
 	txm    sharedUseCases.TransactionManager
+	l      *zap.Logger
 }
 
 func NewAddSecretVersionUseCase(
 	repo SecretMetadataRepository,
 	savers map[secretsDomain.SecretType]SecretDataSaver,
 	txm sharedUseCases.TransactionManager,
+	l *zap.Logger,
 ) *AddSecretVersionUseCase {
-	return &AddSecretVersionUseCase{repo: repo, txm: txm, savers: savers}
+	return &AddSecretVersionUseCase{repo: repo, txm: txm, savers: savers, l: l}
 }
 
 func (uc *AddSecretVersionUseCase) Execute(
@@ -38,29 +39,29 @@ func (uc *AddSecretVersionUseCase) Execute(
 	err := uc.txm.WithinTransaction(ctx, func(txCtx context.Context) error {
 		curSm, err := uc.repo.GetUserSecretMetadataByName(txCtx, uID, sName, 0)
 		if err != nil {
-			l.Logger.Error("ошибка получения метаданных секрета из БД", zap.Error(err))
+			uc.l.Error("ошибка получения метаданных секрета из БД", zap.Error(err))
 			return err
 		}
 		newSm, err := secretsDomain.NewSecretVersionMetadata(curSm)
 		if err != nil {
-			l.Logger.Error("ошибка создания метаданных новой версии секрета", zap.Error(err))
+			uc.l.Error("ошибка создания метаданных новой версии секрета", zap.Error(err))
 			return err
 		}
 
 		err = uc.repo.AddSecretMetadata(txCtx, newSm)
 		if err != nil {
-			l.Logger.Error("ошибка сохранения метаинформации о секрете в БД", zap.Error(err))
+			uc.l.Error("ошибка сохранения метаинформации о секрете в БД", zap.Error(err))
 			return err
 		}
 
 		saver, ok := uc.savers[newSm.SecretType]
 		if !ok {
-			l.Logger.Error("неизвестный тип секрета", zap.String("secret type", sm.SecretType.ToString()))
+			uc.l.Error("неизвестный тип секрета", zap.String("secret type", sm.SecretType.ToString()))
 			return fmt.Errorf("неизвестный тип секрета: %v", newSm.SecretType)
 		}
 		err = saver.SaveSecretData(txCtx, newSm, src)
 		if err != nil {
-			l.Logger.Error("ошибка сохранения данных", zap.Error(err))
+			uc.l.Error("ошибка сохранения данных", zap.Error(err))
 			return err
 		}
 		sm = newSm

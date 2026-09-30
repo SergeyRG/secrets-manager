@@ -5,12 +5,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Logger *zap.Logger
-
-func Initialize(level string) error {
+func Initialize(level string) (*zap.Logger, error) {
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	cfg := zap.NewProductionConfig()
@@ -19,10 +17,8 @@ func Initialize(level string) error {
 
 	l, err := cfg.Build()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	Logger = l
-
-	return nil
+	return l, nil
 }

@@ -45,8 +45,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	logging.Initialize(config.LoggingLevel)
-	l := logging.Logger
+	baseLogger, err := logging.Initialize(config.LoggingLevel)
+	if err != nil {
+		fmt.Printf("ошибка инициализации логгера: %v\n", err)
+		os.Exit(1)
+	}
+	l := baseLogger.Named("main")
 
 	restyClient := resty.New().SetBaseURL(config.ServerBaseUrl)
 	consolePromter := sharedCli.NewConsolePrompter()

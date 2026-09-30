@@ -38,7 +38,7 @@ func NewConfig() (Config, error) {
 
 	cfg.SecretKey = secretKey
 
-	if *t == "" || *d == "" {
+	if *t == "" || *b == "" {
 		return Config{}, errors.New("не заданы пути хранения бинарных данных")
 	}
 
