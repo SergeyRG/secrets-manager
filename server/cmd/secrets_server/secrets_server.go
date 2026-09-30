@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -32,10 +33,14 @@ import (
 
 func main() {
 	//Чтение конфигурационного файла
-	cfg := config.NewConfig()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		fmt.Printf("ошибка конфигурации: %v", err)
+		return
+	}
 
 	//Инициализация логера
-	err := logging.Initialize(cfg.LoggingLevel)
+	err = logging.Initialize(cfg.LoggingLevel)
 	if err != nil {
 		log.Fatal("ошибка инициализации системы логирования", zap.Error(err))
 		return
@@ -66,7 +71,10 @@ func main() {
 		return
 	}
 
-	http.ListenAndServe(cfg.Address, r)
+	err = http.ListenAndServe(cfg.Address, r)
+	if err != nil {
+		l.Error("Сервер завершил работы с ошибкой: %v", zap.Error(err))
+	}
 }
 
 func InitApp(cfg config.Config, txm *sharedPsql.PSQLTxManager) (*chi.Mux, error) {
