@@ -12,6 +12,7 @@ require (
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.55.0
 	golang.org/x/term v0.45.0
+	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0
 	resty.dev/v3 v3.0.0-rc.4
 )
 

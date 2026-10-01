@@ -122,7 +122,7 @@ func main() {
 
 	err = getKeyUC.Execute(sigCtx, ks, pp)
 	if err != nil {
-		if errors.Is(securityUsecases.ErrKeyNotExist, err) {
+		if errors.Is(err, securityUsecases.ErrKeyNotExist) {
 			err = createKeyUC.Execute(sigCtx, pp, ks)
 			if err != nil {
 				consolePromter.Send("ошибка создания ключа.\n")

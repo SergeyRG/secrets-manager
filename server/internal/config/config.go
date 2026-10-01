@@ -17,7 +17,7 @@ type Config struct {
 
 func NewConfig() (Config, error) {
 	cfg := Config{
-		DBDSN:                      "postgres://test:test@localhost:5432/secrets?sslmode=disable",
+		DBDSN:                      "",
 		LoggingLevel:               "debug",
 		SecretKey:                  "",
 		Address:                    ":8080",
@@ -38,15 +38,13 @@ func NewConfig() (Config, error) {
 
 	cfg.SecretKey = secretKey
 
-	if *t == "" || *b == "" {
-		return Config{}, errors.New("не заданы пути хранения бинарных данных")
+	if *t == "" || *b == "" || *d == "" {
+		return Config{}, errors.New("не заданы обательные параметры запуска")
 	}
 
 	cfg.BaseUploadFilesDirectory = *t
 	cfg.BaseBlobRepoFilesDirectory = *b
+	cfg.DBDSN = *d
 
-	if *d != "" {
-		cfg.DBDSN = *d
-	}
 	return cfg, nil
 }
