@@ -35,7 +35,7 @@ func TestLoginHandler_Handle(t *testing.T) {
 
 	validJSON := `{"login":"` + testLogin + `","password":"` + testPassword + `"}`
 
-	createTestJWTManager := func(t *testing.T) *crypto.JWTManager {
+	createTestJWTManager := func() *crypto.JWTManager {
 		jwtm := crypto.NewJWTManager([]byte("my-test-secret-signing-key-12345-67890"))
 		return jwtm
 	}
@@ -55,7 +55,7 @@ func TestLoginHandler_Handle(t *testing.T) {
 			}, nil).
 			AnyTimes()
 
-		jwtm := createTestJWTManager(t)
+		jwtm := createTestJWTManager()
 
 		loginUC := usecases.NewAuthUserUseCase(mockUserRepo, StubHasher{})
 		h := handlers.NewLoginHandler(loginUC, jwtm)
